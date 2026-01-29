@@ -1,0 +1,19 @@
+#include <Wire.h>
+String data = "";
+void setup() {
+  // put your setup code here, to run once:
+  Wire.begin(8);
+  Serial.begin(9600  );
+  Wire.onReceive(Data);
+}
+void Data()
+{   
+    data ="";
+  while (Wire.available()){
+char data1 = Wire.read();
+   data += data1 ;
+}
+Serial.println(data);
+}
+void loop() {
+}

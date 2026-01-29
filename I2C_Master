@@ -1,0 +1,30 @@
+String input ="" ;
+#include <Wire.h>
+void setup() {
+  // put your setup code here, to run once:
+  Wire.begin();
+  Serial.begin(9600);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+ 
+  while (Serial.available()>0)
+   { 
+      char a = Serial.read();
+      if (a == '\n')
+      {
+        Wire.beginTransmission(8); 
+        Wire.write(input.c_str());
+        Wire.endTransmission();
+        Serial.println(input);
+         input = "";
+     }
+     else 
+     {
+      input += a;
+     }
+  
+  }
+
+}

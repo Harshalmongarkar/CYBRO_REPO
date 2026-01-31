@@ -1,0 +1,27 @@
+#include <SPI.h>
+
+volatile char data;        // SPI received character
+volatile bool data1 = false;
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(MISO, OUTPUT);   
+  pinMode(10, INPUT);     
+
+  SPCR |= _BV(SPE);        
+  SPI.attachInterrupt(); 
+
+}
+
+ISR (SPI_STC_vect) {
+  data = SPDR;     
+  data1 = true;    
+}
+
+void loop() {
+  if (data1) {
+    data1 = false; 
+    Serial.print(data);  
+  }
+}

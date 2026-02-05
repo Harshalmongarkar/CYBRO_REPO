@@ -1,0 +1,112 @@
+#include <PS4BT.h>
+#include <usbhub.h>
+#include "CytronMotorDriver.h"
+
+#ifdef dobogusinclude
+#include <spi4teensy3.h>
+#endif
+#include <SPI.h>
+
+USB Usb;
+BTD Btd(&Usb);
+PS4BT PS4(&Btd, PAIR);
+
+// -------- MOTOR SETUP --------
+CytronMD motor1(PWM_DIR, 3, 2);   // Left side
+CytronMD motor2(PWM_DIR, 9, 8);   // Right side
+
+// -------- SPEED CONTROL --------
+int baseSpeed = 50;
+const int SPEED_STEP = 10;
+const int MAX_SPEED = 100;
+const int MIN_SPEED = 0;
+
+void moveForward(int speed);
+void moveReverse(int speed);
+void turnLeft(int speed);
+void turnRight(int speed);
+void stopMotors();
+void turn(int speed);
+void setup() {
+  Serial.begin(115200);
+#if !defined(__MIPSEL__)
+  while (!Serial);
+#endif
+
+  if (Usb.Init() == -1) {
+    Serial.println("USB Host failed");
+    while (1);
+  }
+
+  Serial.println("PS4 Bluetooth Library Started");
+}
+
+void loop() {
+  Usb.Task();
+
+  if (!PS4.connected())
+    return;
+
+  bool moving =
+    PS4.getButtonPress(UP) ||
+    PS4.getButtonPress(DOWN) ||
+    PS4.getButtonPress(LEFT) ||
+    PS4.getButtonPress(RIGHT);
+
+  if (moving && PS4.getButtonClick(R1)) {
+    baseSpeed += SPEED_STEP;
+    if (baseSpeed > MAX_SPEED) baseSpeed = MAX_SPEED;
+    Serial.print("Speed + : ");
+    Serial.println(baseSpeed);
+  }
+
+  if (moving && PS4.getButtonClick(L1)) {
+    baseSpeed -= SPEED_STEP;
+    if (baseSpeed < MIN_SPEED) baseSpeed = MIN_SPEED;
+    Serial.print("Speed - : ");
+    Serial.println(baseSpeed);
+  }
+
+  if (PS4.getButtonPress(UP)) {
+    moveForward(baseSpeed);
+  }
+  else if (PS4.getButtonPress(DOWN)) {
+    moveReverse(baseSpeed);
+  }
+  else if (PS4.getButtonPress(LEFT)) {
+    turnLeft(baseSpeed);
+  }
+  else if (PS4.getButtonPress(RIGHT)) {
+    turnRight(baseSpeed);
+  }
+  else {
+    stopMotors();   
+  }
+  
+}
+
+
+void moveForward(int speed) {
+  motor1.setSpeed(speed);
+  motor2.setSpeed(speed);
+}
+
+void moveReverse(int speed) {
+  motor1.setSpeed(-speed);
+  motor2.setSpeed(-speed);
+}
+
+void turnLeft(int speed) {
+  motor1.setSpeed(255);
+  motor2.setSpeed(-255);
+}
+
+void turnRight(int speed) {
+  motor1.setSpeed(-255);
+  motor2.setSpeed(255);
+}
+
+void stopMotors() {
+  motor1.setSpeed(0);
+  motor2.setSpeed(0);
+}

@@ -1,0 +1,63 @@
+/* Sweep
+ by BARRAGAN <http://barraganstudio.com>
+ This example code is in the public domain.
+
+ modified 8 Nov 2013
+ by Scott Fitzgerald
+ https://www.arduino.cc/en/Tutorial/LibraryExamples/Sweep
+*/
+
+#include <Servo.h>
+
+Servo myservo;
+Servo myservo1;  // create Servo object to control a servo
+  // create Servo object to control a servo
+// twelve Servo objects can be created on most boards
+
+int pos = 0,pos1=0,s,m , i ,j;    // variable to store the servo position
+
+void setup() {
+  myservo.attach(9); 
+  myservo1.attach(8);  // attaches the servo on pin 9 to the Servo object
+  Serial.begin(9600);
+}
+
+void loop() {
+  
+ if (Serial.available()){
+  s = Serial.parseInt();
+ if(s>=200 && s<=380)
+ {
+    pos1 = s;
+    pos1 = map(pos1 , 200 , 380 , 0 , 180 ) ;
+    myservo1.write(pos1);
+    Serial.print("pos1 = ");
+    Serial.println(pos1);
+ }
+   else if(s  == 1)
+  {
+    
+    for (i = 0 ; i <= 90; i++) {
+     myservo.write(i);
+   Serial.print("pos = ");
+    Serial.println(i);
+    delay(50);
+    }
+  }
+   else if (s == 2)
+   {
+    for ( j= 90 ; j >= 0; j--) {
+     myservo.write(j);
+   Serial.print("pos = ");
+    Serial.println(j);
+    delay(50);
+   
+   }
+ }
+ }
+ }
+ 
+   
+   
+
+  

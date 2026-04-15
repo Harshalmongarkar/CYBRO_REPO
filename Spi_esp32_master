@@ -1,0 +1,27 @@
+#include <SPI.h>
+
+String input;
+
+void setup() {
+  Serial.begin(115200);
+  SPI.begin();
+  pinMode(5, OUTPUT); // SS
+
+  Serial.println("Type message:");
+}
+
+void loop() {
+  if (Serial.available()) {
+    input = Serial.readStringUntil('\n');
+
+    digitalWrite(5, LOW);  // select slave
+
+    for (int i = 0; i < input.length(); i++) {
+      SPI.transfer(input[i]);  // send each character
+    }
+
+    digitalWrite(5, HIGH); // deselect
+
+    Serial.println("Sent: " + input);
+  }
+}

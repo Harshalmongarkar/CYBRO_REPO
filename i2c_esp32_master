@@ -1,0 +1,23 @@
+#include <Wire.h>
+
+String input = "";
+
+void setup() {
+  Serial.begin(115200);
+  Wire.begin();  // Master
+
+  Serial.println("Type message:");
+}
+
+void loop() {
+  if (Serial.available()) {
+    input = Serial.readStringUntil('\n');  
+
+    Wire.beginTransmission(8); 
+    Wire.write((const uint8_t*)input.c_str(), input.length());
+
+    Wire.endTransmission();
+
+    Serial.println("Sent: " + input);
+  }
+}

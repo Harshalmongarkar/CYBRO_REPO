@@ -1,0 +1,50 @@
+#include <Arduino.h>
+#include "driver/spi_slave.h"
+
+#define MOSI 23
+#define MISO 19
+#define SCLK 18
+#define CS   5
+
+void setup() {
+  Serial.begin(115200);
+
+  // ✅ Bus config
+  spi_bus_config_t buscfg;
+  memset(&buscfg, 0, sizeof(buscfg));
+
+  buscfg.mosi_io_num = MOSI;
+  buscfg.miso_io_num = MISO;
+  buscfg.sclk_io_num = SCLK;
+  buscfg.quadwp_io_num = -1;
+  buscfg.quadhd_io_num = -1;
+
+  // ✅ Slave config (FIXED)
+  spi_slave_interface_config_t slvcfg;
+  memset(&slvcfg, 0, sizeof(slvcfg));
+
+  slvcfg.spics_io_num = CS;
+  slvcfg.queue_size = 1;
+  slvcfg.mode = 0;
+
+  // ✅ Initialize SPI Slave
+  spi_slave_initialize(HSPI_HOST, &buscfg, &slvcfg, 1);
+
+  Serial.println("SPI Slave Ready");
+}
+
+void loop() {
+  char recvbuf[64] = {0};
+
+  spi_slave_transaction_t t;
+  memset(&t, 0, sizeof(t));
+
+  t.length = sizeof(recvbuf) * 8;
+  t.rx_buffer = recvbuf;
+
+  // Wait for master
+  spi_slave_transmit(HSPI_HOST, &t, portMAX_DELAY);
+
+  Serial.print("Received: ");
+  Serial.println(recvbuf);
+}

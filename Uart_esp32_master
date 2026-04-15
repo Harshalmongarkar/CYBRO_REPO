@@ -1,0 +1,19 @@
+void setup() {
+  Serial.begin(115200);
+  Serial2.begin(115200, SERIAL_8N1, 16, 17);
+
+  Serial.println("Sender Started");
+}
+
+void loop() {
+  // Serial2.println("HELLO");
+  // Serial.println("Sent HELLO");
+  if ( Serial.available())
+  {
+  String data = Serial.readStringUntil('\n');
+  Serial2.println(data);
+  Serial.print("Sent ");
+  Serial.println(data);
+  delay(1000);
+ }
+}

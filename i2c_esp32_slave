@@ -1,0 +1,20 @@
+#include <Wire.h>
+
+void receiveEvent(int howMany) {
+  while (Wire.available()) {
+    char c = Wire.read();
+    Serial.print(c);
+  }
+  Serial.println();
+}
+
+void setup() {
+  Wire.begin(8);  
+  Wire.onReceive(receiveEvent);
+
+  Serial.begin(115200);
+  Serial.println("Slave Ready");
+}
+
+void loop() {
+}

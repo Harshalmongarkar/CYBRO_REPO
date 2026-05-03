@@ -1,0 +1,26 @@
+#include <Wire.h>
+int value;
+void setup() {
+  // put your setup code here, to run once:
+   pinMode(PC13, OUTPUT);
+  digitalWrite(PC13, HIGH); 
+  Wire.begin(8);
+  Serial.begin(9600  );
+  Wire.onReceive(Data);
+}
+void Data(int numBytes)
+{   
+    
+  while (Wire.available()){
+char data = Wire.read();
+if( data == 'g')
+  {
+    digitalWrite(PC13, LOW);  
+    delay(500);
+    digitalWrite(PC13, HIGH); 
+  }
+}
+
+}
+void loop() {
+}

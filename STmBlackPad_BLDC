@@ -1,0 +1,26 @@
+#include <Servo.h>
+
+Servo esc;
+
+void setup() {
+  esc.attach(PA0);  // PWM pin
+
+  // Arm ESC (important step)
+  esc.writeMicroseconds(1000); // minimum throttle
+  delay(3000);
+}
+
+void loop() {
+  // Increase speed
+  esc.writeMicroseconds(1200);
+  delay(2000);
+
+  esc.writeMicroseconds(1400);
+  delay(2000);
+
+  esc.writeMicroseconds(1600);
+  delay(2000);
+
+  esc.writeMicroseconds(1000); // stop
+  delay(3000);
+}

@@ -1,0 +1,140 @@
+#include <Wire.h>
+
+#define SLAVE_ADDR 0x08
+
+volatile int pos_x = 0;
+volatile int pos_y = 0;
+volatile int kfs_enc_left = 0;
+volatile int kfs_enc_right = 0;
+volatile int spear_enc = 0;
+volatile int frnt_enc = 0;
+volatile int rear_enc = 0;
+int fr_ir;
+
+#define INPUTPIN1A 15
+#define INPUTPIN1B 4
+#define INPUTPIN2A 17
+#define INPUTPIN2B 16
+#define INPUTPIN3A 18
+#define INPUTPIN3B 19
+#define INPUTPIN4A 32
+#define INPUTPIN4B 33
+#define INPUTPIN5A 27
+#define INPUTPIN5B 14
+#define INPUTPIN6A 26
+#define INPUTPIN6B 25
+#define INPUTPIN7A 23
+#define INPUTPIN7B 13
+#define ir1 39
+#define ir2 34
+#define ir3 35
+#define ir4 36
+
+portMUX_TYPE synch = portMUX_INITIALIZER_UNLOCKED;
+
+void IRAM_ATTR isr1() {
+  portENTER_CRITICAL(&synch);
+  if      (digitalRead(INPUTPIN1B) == 0) pos_x--;
+  else if (digitalRead(INPUTPIN1B) == 1) pos_x++;
+  portEXIT_CRITICAL(&synch);
+}
+
+void IRAM_ATTR isr2() {
+  portENTER_CRITICAL(&synch);
+  if      (digitalRead(INPUTPIN2B) == 1)  pos_y--;
+  else if (digitalRead(INPUTPIN2B) == 0)  pos_y++;
+  portEXIT_CRITICAL(&synch);
+}
+
+void IRAM_ATTR isr3() {
+  portENTER_CRITICAL(&synch);
+  if      (digitalRead(INPUTPIN3B) == 0) kfs_enc_left--;
+  else if (digitalRead(INPUTPIN3B) == 1) kfs_enc_left++;
+  portEXIT_CRITICAL(&synch);
+}
+
+void IRAM_ATTR isr4() {
+  portENTER_CRITICAL(&synch);
+  if      (digitalRead(INPUTPIN4B) == 0) kfs_enc_right--;
+  else if (digitalRead(INPUTPIN4B) == 1) kfs_enc_right++;
+  portEXIT_CRITICAL(&synch);
+}
+
+void IRAM_ATTR isr5() {
+  portENTER_CRITICAL(&synch);
+  if      (digitalRead(INPUTPIN5B) == 1)  spear_enc--;
+  else if (digitalRead(INPUTPIN5B) == 0)  spear_enc++;
+  portEXIT_CRITICAL(&synch);
+}
+
+void IRAM_ATTR isr6() {
+  portENTER_CRITICAL(&synch);
+  if      (digitalRead(INPUTPIN6B) == 0) frnt_enc--;
+  else if (digitalRead(INPUTPIN6B) == 1) frnt_enc++;
+  portEXIT_CRITICAL(&synch);
+}
+
+void IRAM_ATTR isr7() {
+  portENTER_CRITICAL(&synch);
+  if      (digitalRead(INPUTPIN7B) == 0) rear_enc--;
+  else if (digitalRead(INPUTPIN7B) == 1) rear_enc++;
+  portEXIT_CRITICAL(&synch);
+}
+
+char txBuffer[32];
+volatile bool requestFlag = false;
+
+void receiveEvent(int bytes) {
+  while (Wire.available()) Wire.read();
+}
+
+void requestEvent() {
+  snprintf(txBuffer, sizeof(txBuffer),"%d,%d,%d,%d,%d,%d,%d,%d\n", pos_x, pos_y, kfs_enc_left, kfs_enc_right, spear_enc, frnt_enc, rear_enc, fr_ir);
+  Wire.write((uint8_t*)txBuffer, strlen(txBuffer));
+  requestFlag = true;
+}
+
+void setup() {
+  Serial.begin(115200);
+  Wire.begin(SLAVE_ADDR);
+  Wire.onReceive(receiveEvent);
+  Wire.onRequest(requestEvent);
+  Serial.print("setup() running on core ");
+  Serial.println(xPortGetCoreID());
+  pinMode(INPUTPIN1A, INPUT_PULLUP);
+  pinMode(INPUTPIN1B, INPUT_PULLUP);
+  pinMode(INPUTPIN2A, INPUT_PULLUP);
+  pinMode(INPUTPIN2B, INPUT_PULLUP);
+  pinMode(INPUTPIN3A, INPUT_PULLUP);
+  pinMode(INPUTPIN3B, INPUT_PULLUP);
+  pinMode(INPUTPIN4A, INPUT_PULLUP);
+  pinMode(INPUTPIN4B, INPUT_PULLUP);
+  pinMode(INPUTPIN5A, INPUT_PULLUP);
+  pinMode(INPUTPIN5B, INPUT_PULLUP);
+  pinMode(INPUTPIN6A, INPUT_PULLUP);
+  pinMode(INPUTPIN6B, INPUT_PULLUP);
+  pinMode(INPUTPIN7A, INPUT_PULLUP);
+  pinMode(INPUTPIN7B, INPUT_PULLUP);
+  pinMode(ir1, INPUT_PULLUP);
+  pinMode(ir2, INPUT_PULLUP);
+  pinMode(ir3, INPUT_PULLUP);
+  pinMode(ir4, INPUT_PULLUP);
+  attachInterrupt(INPUTPIN1A, isr1, RISING);
+  attachInterrupt(INPUTPIN2A, isr2, RISING);
+  attachInterrupt(INPUTPIN3A, isr3, RISING);
+  attachInterrupt(INPUTPIN4A, isr4, RISING);
+  attachInterrupt(INPUTPIN5A, isr5, RISING);
+  attachInterrupt(INPUTPIN6A, isr6, RISING);
+  attachInterrupt(INPUTPIN7A, isr7, RISING);
+  Serial.println("ESP32 +Ready");
+}
+
+void loop() {
+  if (requestFlag) {
+    Serial.print("Sent: ");
+    Serial.print(txBuffer);
+    requestFlag = false;
+  }
+  fr_ir = 1*digitalRead(ir1) + 2*digitalRead(ir2) + 4*digitalRead(ir3) + 8*digitalRead(ir4);
+  Serial.printf("%d,%d,%d,%d,%d,%d,%d,%d\n", pos_x, pos_y, kfs_enc_left, kfs_enc_right, spear_enc, frnt_enc, rear_enc, fr_ir);
+}

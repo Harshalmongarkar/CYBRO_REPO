@@ -1,0 +1,121 @@
+#include "CytronMotorDriver.h" 
+#include <Servo.h>
+
+CytronMD motor1(PWM_DIR, 9, 14); 
+CytronMD motor2(PWM_DIR, 8, 15); 
+CytronMD motor3(PWM_DIR, 7, 39); 
+CytronMD motor4(PWM_DIR, 6, 41);
+CytronMD Spear_motor(PWM_DIR, 5, 4);
+CytronMD front_motor(PWM_DIR, 2, 17);
+CytronMD rear_motor(PWM_DIR, 3, 16); 
+#define left_gripper  A10
+#define left_extend   A11
+#define right_gripper A13
+#define right_extend  A12
+Servo Spear_servo;
+Servo Camera_servo;
+Servo Encoder_servo;
+Servo left_bldc;
+Servo right_bldc;
+
+String inputString = "";
+bool stringComplete = false;
+int m1, m2, m3, m4, sm, fm, rm, lg, le, rg, re, ss, cs, es, lb, rb, chk;
+unsigned long lastReceiveTime = 0;
+const unsigned long timeout = 500;
+
+void setup() {
+  Serial.begin(115200);
+  inputString.reserve(300); 
+  Spear_servo.attach(45);
+  Camera_servo.attach(47);
+  Encoder_servo.attach(46);
+  left_bldc.attach(11);
+  right_bldc.attach(12);
+  pinMode(left_gripper, OUTPUT);
+  pinMode(left_extend, OUTPUT);
+  pinMode(right_gripper, OUTPUT);
+  pinMode(right_extend, OUTPUT);
+  digitalWrite(left_gripper, LOW);
+  digitalWrite(left_extend, LOW);
+  digitalWrite(right_gripper, LOW);
+  digitalWrite(right_extend, LOW);
+  delay(500);
+}
+
+void loop() {
+  if (Serial.available()) {
+    char inChar = (char)Serial.read();
+    if (inChar == '\n') {
+      stringComplete = true;
+    }
+    else {
+      inputString += inChar;
+    }
+  }
+  if (stringComplete) {
+    processCommand(inputString);
+    inputString = "";
+    stringComplete = false;
+    lastReceiveTime = millis();
+  }
+  if (millis() - lastReceiveTime > timeout) {
+    stopAll();
+    lastReceiveTime = millis();
+  }
+}
+
+void processCommand(String data) {
+  int parsed = sscanf(data.c_str(), "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", &m1, &m2, &m3, &m4, &sm, &fm, &rm, &lg, &le, &rg, &re, &ss, &cs, &es, &lb, &rb, &chk);
+  if (parsed == 17 && chk==abs(m1+m2+m3+m4+sm+fm+rm+lg+le+rg+re+ss+cs+es+lb+rb)) {
+    m1 = constrain(m1, -255, 255);
+    m2 = constrain(m2, -255, 255);
+    m3 = constrain(m3, -255, 255);
+    m4 = constrain(m4, -255, 255);
+    sm = constrain(sm, -255, 255);
+    fm = constrain(fm, -255, 255);
+    rm = constrain(rm, -255, 255);
+    motor1.setSpeed(m1);
+    motor2.setSpeed(m2);
+    motor3.setSpeed(m3);
+    motor4.setSpeed(m4);
+    Spear_motor.setSpeed(sm);
+    front_motor.setSpeed(fm);
+    rear_motor.setSpeed(rm);
+    if(lg == 0)       digitalWrite(left_gripper, LOW);
+    else              digitalWrite(left_gripper, HIGH);
+    if(le == 0)       digitalWrite(left_extend, LOW);
+    else              digitalWrite(left_extend, HIGH);
+    if(rg == 0)       digitalWrite(right_gripper, LOW);
+    else              digitalWrite(right_gripper, HIGH);
+    if(re == 0)       digitalWrite(right_extend, LOW);
+    else              digitalWrite(right_extend, HIGH);
+    Spear_servo.write(ss);
+    Camera_servo.write(cs);
+    Encoder_servo.write(es);
+    left_bldc.writeMicroseconds(1520+lb);
+    right_bldc.writeMicroseconds(1520+rb);
+  }
+  else {
+    stopAll();
+  }
+}
+
+void stopAll() {
+  motor1.setSpeed(0);
+  motor2.setSpeed(0);
+  motor3.setSpeed(0);
+  motor4.setSpeed(0);
+  Spear_motor.setSpeed(0);
+  front_motor.setSpeed(0);
+  rear_motor.setSpeed(0);
+  digitalWrite(left_gripper, HIGH);
+  digitalWrite(left_extend, HIGH);
+  digitalWrite(right_gripper, HIGH);
+  digitalWrite(right_extend, HIGH);
+  Spear_servo.write(110);
+  Camera_servo.write(0);
+  Encoder_servo.write(0);
+  left_bldc.writeMicroseconds(1520);
+  right_bldc.writeMicroseconds(1520);
+}
